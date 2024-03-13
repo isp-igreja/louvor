@@ -32,6 +32,12 @@
         font-size: 16px;
       }
 
+      #feedbackText {
+        width: 80vw;
+        max-width: 100%;
+        height: 100px;
+      }
+
       .file-name {
         font-size: 1em;
         padding: 10px;
@@ -125,11 +131,35 @@
         Compartilhar
       </button>
     </div>
+
     <div id="fileContent"></div>
+
+    <button id="feedbackButton" class="button" style="display: block">
+      Feedback
+    </button>
+
+    <div id="feedbackSection" style="display: none; margin-top: 10px">
+      <textarea
+        id="feedbackText"
+        placeholder="Digite seu feedback aqui..."
+      ></textarea>
+      <div id="button-container">
+        <button id="sendFeedbackButton" class="button" style="display: block">
+          Enviar Feedback
+        </button>
+        <button
+          id="closeFeedback"
+          class="button"
+          style="display: block; margin-left: 10px"
+        >
+          Fechar
+        </button>
+      </div>
+    </div>
 
     <script>
       document.addEventListener("DOMContentLoaded", function () {
-        sendEventToWebhook('home_page_visit', 'Home page visited');
+        sendEventToWebhook("home_page_visit", "Home page visited");
 
         const repoOwner = "isp-igreja";
         const repoName = "louvor";
@@ -197,8 +227,8 @@
           copyUrlButton.style.display = "block";
           copyButton.onclick = () => {
             navigator.clipboard.writeText(content);
-            sendEventToWebhook('copy_button_click', 'Copiar button clicked');
-          }
+            sendEventToWebhook("copy_button_click", "Copiar button clicked");
+          };
         }
 
         filterInput.oninput = function () {
@@ -221,7 +251,35 @@
           const query = encodeURIComponent(selectedFileName);
           const url = `https://${repoOwner}.github.io/${repoName}/?file=${query}`;
           navigator.clipboard.writeText(url);
-          sendEventToWebhook('copy_url_button_click', 'Compartilhar button clicked');
+          sendEventToWebhook(
+            "copy_url_button_click",
+            "Compartilhar button clicked"
+          );
+        };
+
+        feedbackButton.onclick = () => {
+          feedbackSection.style.display = "block";
+          feedbackButton.style.display = "none";
+          sendFeedbackButton.style.display = "block";
+        };
+
+        closeFeedback.onclick = () => {
+          feedbackText.value = "";
+          feedbackSection.style.display = "none";
+          feedbackButton.style.display = "block";
+        };
+
+        sendFeedbackButton.onclick = () => {
+          const feedbackContent = feedbackText.value.trim();
+          if (feedbackContent) {
+            sendEventToWebhook("feedback_submitted", feedbackContent);
+            feedbackText.value = "";
+            feedbackSection.style.display = "none";
+            feedbackButton.style.display = "block";
+            alert("Feedback enviado com sucesso!");
+          } else {
+            alert("Por favor, digite algum feedback antes de enviar.");
+          }
         };
 
         displayFiles();
