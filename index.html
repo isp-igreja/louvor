@@ -129,12 +129,32 @@
 
     <script>
       document.addEventListener("DOMContentLoaded", function () {
+        sendEventToWebhook('home_page_visit', 'Home page visited');
+
         const repoOwner = "isp-igreja";
         const repoName = "louvor";
         const fileList = document.getElementById("fileList");
         const filterInput = document.getElementById("filterInput");
         const fileContent = document.getElementById("fileContent");
         const copyButton = document.getElementById("copyButton");
+
+        function sendEventToWebhook(eventType, eventData) {
+          fetch("https://eo4d3fqhrhazl81.m.pipedream.net", {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+            },
+            body: JSON.stringify({
+              event: eventType,
+              data: eventData,
+            }),
+          })
+            .then((response) => response.json())
+            .then((data) => console.log("Success:", data))
+            .catch((error) => {
+              console.error("Error:", error);
+            });
+        }
 
         async function fetchFiles() {
           const response = await fetch(
@@ -175,7 +195,10 @@
           fileContent.style.display = "block";
           copyButton.style.display = "block";
           copyUrlButton.style.display = "block";
-          copyButton.onclick = () => navigator.clipboard.writeText(content);
+          copyButton.onclick = () => {
+            navigator.clipboard.writeText(content);
+            sendEventToWebhook('copy_button_click', 'Copiar button clicked');
+          }
         }
 
         filterInput.oninput = function () {
@@ -198,6 +221,7 @@
           const query = encodeURIComponent(selectedFileName);
           const url = `https://${repoOwner}.github.io/${repoName}/?file=${query}`;
           navigator.clipboard.writeText(url);
+          sendEventToWebhook('copy_url_button_click', 'Compartilhar button clicked');
         };
 
         displayFiles();
