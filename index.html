@@ -261,6 +261,7 @@
           feedbackSection.style.display = "block";
           feedbackButton.style.display = "none";
           sendFeedbackButton.style.display = "block";
+          sendEventToWebhook("feedback_opened", "Feedback button clicked");
         };
 
         closeFeedback.onclick = () => {
