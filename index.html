@@ -38,7 +38,8 @@
         height: 100px;
       }
 
-      .file-name, .folder-name {
+      .file-name,
+      .folder-name {
         font-size: 1em;
         padding: 10px;
         background-color: #fff;
@@ -53,7 +54,8 @@
         color: #6699cc;
       }
 
-      .file-name:hover, .folder-name:hover {
+      .file-name:hover,
+      .folder-name:hover {
         background-color: #f9f9f9;
       }
 
@@ -173,7 +175,9 @@
         const fileContent = document.getElementById("fileContent");
         const copyButton = document.getElementById("copyButton");
         const copyUrlButton = document.getElementById("copyUrlButton");
+        let allFiles = [];
         let currentPath = '';
+        let displayedFilePath = '';
 
         function sendEventToWebhook(eventType, eventData) {
           fetch("https://eo4d3fqhrhazl81.m.pipedream.net", {
@@ -199,6 +203,17 @@
           );
           const data = await response.json();
           return data.filter(file => file.type === "dir" || file.name.endsWith(".txt"));
+        }
+
+        async function getAllFiles(path = '') {
+          const data = await fetchFiles(path);
+          for (const file of data) {
+            if (file.type === "dir") {
+              await getAllFiles(file.path);
+            } else {
+              allFiles.push(file);
+            }
+          }
         }
 
         async function displayFiles(path = '') {
@@ -232,7 +247,7 @@
 
         async function fetchFileContent(path) {
           const content = await fetch(
-            `https://raw.githubusercontent.com/${repoOwner}/${repoName}/main/${path}`
+            `https://raw.githubusercontent.com/${repoOwner}/${repoName}/add-folders/${path}`
           )
             .then((response) => response.text())
             .catch((error) => {
@@ -242,6 +257,7 @@
           fileContent.style.display = "block";
           copyButton.style.display = "block";
           copyUrlButton.style.display = "block";
+          displayedFilePath = path;
           copyButton.onclick = () => {
             navigator.clipboard.writeText(content);
             sendEventToWebhook("copy_button_click", "Copiar button clicked");
@@ -250,14 +266,25 @@
 
         filterInput.oninput = function () {
           const value = this.value.toLowerCase();
-          const files = fileList.getElementsByClassName("file-name");
-          for (let i = 0; i < files.length; i++) {
-            if (files[i].textContent.toLowerCase().includes(value)) {
-              files[i].style.display = "";
+          if (value === '') {
+            if (displayedFilePath) {
+              currentPath = displayedFilePath.split('/').slice(0, -1).join('/');
+              displayFiles(currentPath);
             } else {
-              files[i].style.display = "none";
+              currentPath = '';
+              displayFiles();
             }
+            return;
           }
+          const files = allFiles.filter(file => file.path.toLowerCase().includes(value));
+          fileList.innerHTML = '';
+          files.forEach((file) => {
+            const div = document.createElement("div");
+            div.className = "file-name";
+            div.textContent = file.name.replace(".txt", "");
+            div.onclick = () => fetchFileContent(file.path);
+            fileList.appendChild(div);
+          });
         };
 
         copyUrlButton.onclick = () => {
@@ -296,6 +323,7 @@
           }
         };
 
+        getAllFiles();
         displayFiles();
 
         const queryString = window.location.search;
