@@ -120,6 +120,77 @@
           padding: 1.5em;
         }
       }
+
+      .modal {
+        display: none;
+        position: fixed;
+        z-index: 1;
+        left: 0;
+        top: 0;
+        width: 100%;
+        height: 100%;
+        overflow: auto;
+        background-color: rgb(0, 0, 0);
+        background-color: rgba(0, 0, 0, 0.4);
+        padding-top: 60px;
+      }
+
+      .modal-content {
+        background-color: #fefefe;
+        margin: 5% auto;
+        padding: 20px;
+        border: 1px solid #888;
+        width: 80%;
+        max-width: 500px;
+        border-radius: 4px;
+        font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+      }
+
+      .close {
+        color: #aaa;
+        float: right;
+        font-size: 28px;
+        font-weight: bold;
+      }
+
+      .close:hover,
+      .close:focus {
+        color: black;
+        text-decoration: none;
+        cursor: pointer;
+      }
+
+      .modal-input,
+      .modal-textarea {
+        width: 100%;
+        padding: 10px;
+        margin: 10px 0;
+        box-sizing: border-box;
+        border: 1px solid #ddd;
+        border-radius: 4px;
+        font-size: 16px;
+        font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+      }
+
+      .modal-textarea {
+        height: 100px;
+      }
+
+      .modal-button {
+        background-color: #007bff;
+        color: white;
+        padding: 10px 20px;
+        border: none;
+        border-radius: 4px;
+        cursor: pointer;
+        font-size: 16px;
+        margin-top: 10px;
+        font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+      }
+
+      .modal-button:hover {
+        background-color: #0056b3;
+      }
     </style>
   </head>
   <body>
@@ -141,9 +212,14 @@
 
     <div id="fileContent"></div>
 
-    <button id="feedbackButton" class="button" style="display: block">
-      Feedback
-    </button>
+    <div id="button-container">
+      <button id="feedbackButton" class="button" style="display: block">
+        Feedback
+      </button>
+      <button id="sugerirButton" class="button" style="display: block">
+        Sugerir
+      </button>
+    </div>
 
     <div id="feedbackSection" style="display: none; margin-top: 10px">
       <textarea
@@ -164,6 +240,26 @@
       </div>
     </div>
 
+    <div id="sugerirModal" class="modal">
+      <div class="modal-content">
+        <span class="close">&times;</span>
+        <p>Envie uma sugestão de música para adicionar ao repositório.</p>
+        <p>Somente aceitamos músicas cristãs, e a submissão depende de aprovação. As letras devem estar no mesmo formato que as músicas do repertório de louvor.</p>
+        <input
+          type="text"
+          id="tituloInput"
+          class="modal-input"
+          placeholder="Título"
+        />
+        <textarea
+          id="letrasInput"
+          class="modal-textarea"
+          placeholder="Letras"
+        ></textarea>
+        <button id="sendSugerirButton" class="modal-button">Enviar</button>
+      </div>
+    </div>
+
     <script>
       document.addEventListener("DOMContentLoaded", function () {
         sendEventToWebhook("home_page_visit", "Home page visited");
@@ -176,8 +272,8 @@
         const copyButton = document.getElementById("copyButton");
         const copyUrlButton = document.getElementById("copyUrlButton");
         let allFiles = [];
-        let currentPath = '';
-        let displayedFilePath = '';
+        let currentPath = "";
+        let displayedFilePath = "";
 
         function sendEventToWebhook(eventType, eventData) {
           fetch("https://eo4d3fqhrhazl81.m.pipedream.net", {
@@ -197,15 +293,35 @@
             });
         }
 
-        async function fetchFiles(path = '') {
+        async function suggestMusic(title, lyrics) {
+          fetch("https://eohqkchfhnp61zk.m.pipedream.net", {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+            },
+            body: JSON.stringify({
+              titulo: title,
+              letra: lyrics,
+            }),
+          })
+            .then((response) => response.json())
+            .then((data) => console.log("Success:", data))
+            .catch((error) => {
+              console.error("Error:", error);
+            });
+        }
+
+        async function fetchFiles(path = "") {
           const response = await fetch(
             `https://api.github.com/repos/${repoOwner}/${repoName}/contents/${path}?ref=main`
           );
           const data = await response.json();
-          return data.filter(file => file.type === "dir" || file.name.endsWith(".txt"));
+          return data.filter(
+            (file) => file.type === "dir" || file.name.endsWith(".txt")
+          );
         }
 
-        async function getAllFiles(path = '') {
+        async function getAllFiles(path = "") {
           const data = await fetchFiles(path);
           for (const file of data) {
             if (file.type === "dir") {
@@ -216,15 +332,15 @@
           }
         }
 
-        async function displayFiles(path = '') {
-          fileList.innerHTML = '';
+        async function displayFiles(path = "") {
+          fileList.innerHTML = "";
           const files = await fetchFiles(path);
           if (path) {
             const backDiv = document.createElement("div");
             backDiv.className = "folder-name";
             backDiv.textContent = "..";
             backDiv.onclick = () => {
-              currentPath = currentPath.split('/').slice(0, -1).join('/');
+              currentPath = currentPath.split("/").slice(0, -1).join("/");
               displayFiles(currentPath);
             };
             fileList.appendChild(backDiv);
@@ -232,7 +348,10 @@
           files.forEach((file) => {
             const div = document.createElement("div");
             div.className = file.type === "dir" ? "folder-name" : "file-name";
-            div.textContent = file.type === "dir" ? `> ${file.name}` : file.name.replace(".txt", "");
+            div.textContent =
+              file.type === "dir"
+                ? `> ${file.name}`
+                : file.name.replace(".txt", "");
             div.onclick = () => {
               if (file.type === "dir") {
                 currentPath = file.path;
@@ -266,18 +385,20 @@
 
         filterInput.oninput = function () {
           const value = this.value.toLowerCase();
-          if (value === '') {
+          if (value === "") {
             if (displayedFilePath) {
-              currentPath = displayedFilePath.split('/').slice(0, -1).join('/');
+              currentPath = displayedFilePath.split("/").slice(0, -1).join("/");
               displayFiles(currentPath);
             } else {
-              currentPath = '';
+              currentPath = "";
               displayFiles();
             }
             return;
           }
-          const files = allFiles.filter(file => file.path.toLowerCase().includes(value));
-          fileList.innerHTML = '';
+          const files = allFiles.filter((file) =>
+            file.path.toLowerCase().includes(value)
+          );
+          fileList.innerHTML = "";
           files.forEach((file) => {
             const div = document.createElement("div");
             div.className = "file-name";
@@ -320,6 +441,39 @@
             alert("Feedback enviado com sucesso!");
           } else {
             alert("Por favor, digite algum feedback antes de enviar.");
+          }
+        };
+
+        const sugerirModal = document.getElementById("sugerirModal");
+        const sugerirButton = document.getElementById("sugerirButton");
+        const closeModal = document.getElementsByClassName("close")[0];
+
+        sugerirButton.onclick = () => {
+          sugerirModal.style.display = "block";
+        };
+
+        closeModal.onclick = () => {
+          sugerirModal.style.display = "none";
+        };
+
+        window.onclick = (event) => {
+          if (event.target == sugerirModal) {
+            sugerirModal.style.display = "none";
+          }
+        };
+
+        sendSugerirButton.onclick = () => {
+          const titulo = document.getElementById("tituloInput").value.trim();
+          const letras = document.getElementById("letrasInput").value.trim();
+          if (titulo && letras) {
+            sendEventToWebhook("sugerir_submitted", "Sugestão de música recebida");
+            suggestMusic(titulo, letras);
+            document.getElementById("tituloInput").value = "";
+            document.getElementById("letrasInput").value = "";
+            sugerirModal.style.display = "none";
+            alert("Sugestão enviada com sucesso!");
+          } else {
+            alert("Por favor, preencha ambos os campos antes de enviar.");
           }
         };
 
