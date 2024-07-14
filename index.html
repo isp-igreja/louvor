@@ -409,8 +409,9 @@
         };
 
         copyUrlButton.onclick = () => {
-          const query = encodeURIComponent(currentPath);
-          const url = `https://${repoOwner}.github.io/${repoName}/?file=${query}`;
+          // const query = encodeURIComponent(currentPath);
+          // const url = `https://${repoOwner}.github.io/${repoName}/?file=${query}`;
+          const url = `https://${repoOwner}.github.io/${repoName}`;
           navigator.clipboard.writeText(url);
           sendEventToWebhook(
             "copy_url_button_click",
