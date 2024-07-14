@@ -192,6 +192,7 @@
         background-color: #0056b3;
       }
     </style>
+    <script src="https://cdn.jsdelivr.net/npm/qrcode/build/qrcode.min.js"></script>
   </head>
   <body>
     <h1>Louvor ISP</h1>
@@ -260,6 +261,14 @@
       </div>
     </div>
 
+    <div id="qrModal" class="modal">
+      <div class="modal-content">
+        <span class="close">&times;</span>
+        <div id="qrcode"></div>
+        <button id="copyQrUrlButton" class="modal-button">Copy URL</button>
+      </div>
+    </div>
+
     <script>
       document.addEventListener("DOMContentLoaded", function () {
         sendEventToWebhook("home_page_visit", "Home page visited");
@@ -271,6 +280,10 @@
         const fileContent = document.getElementById("fileContent");
         const copyButton = document.getElementById("copyButton");
         const copyUrlButton = document.getElementById("copyUrlButton");
+        const qrModal = document.getElementById("qrModal");
+        const qrcodeDiv = document.getElementById("qrcode");
+        const copyQrUrlButton = document.getElementById("copyQrUrlButton");
+        const closeQrModal = qrModal.querySelector(".close");
         let allFiles = [];
         let currentPath = "";
         let displayedFilePath = "";
@@ -417,6 +430,24 @@
             "copy_url_button_click",
             "Compartilhar button clicked"
           );
+          qrModal.style.display = "block";
+          QRCode.toCanvas(qrcodeDiv, url, { width: 200 });
+        };
+
+        closeQrModal.onclick = () => {
+          qrModal.style.display = "none";
+        };
+
+        window.onclick = (event) => {
+          if (event.target == qrModal) {
+            qrModal.style.display = "none";
+          }
+        };
+
+        copyQrUrlButton.onclick = () => {
+          const url = `https://${repoOwner}.github.io/${repoName}`;
+          navigator.clipboard.writeText(url);
+          alert("URL copied to clipboard!");
         };
 
         feedbackButton.onclick = () => {
