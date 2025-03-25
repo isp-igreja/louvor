@@ -32,10 +32,11 @@ function App() {
   const fetchContents = async (path: string = '') => {
     try {
       setError('');
+      const repoPath = path || 'musicas';
       const response = await octokit.request('GET /repos/{owner}/{repo}/contents/{path}', {
         owner: 'isp-igreja',
         repo: 'louvor',
-        path,
+        path: repoPath,
         headers: {
           'X-GitHub-Api-Version': '2022-11-28'
         }
@@ -64,7 +65,7 @@ function App() {
       }
     } catch (error) {
       console.error('Error fetching contents:', error);
-      setError('Erro ao buscar conteúdo do GitHub');
+      setError('Erro ao buscar músicas');
       setContents([]);
       setAllFiles([]);
     }
@@ -74,7 +75,7 @@ function App() {
     for (const item of items) {
       if (item.type === 'file' && item.name.endsWith('.txt')) {
         accumulator.push(item);
-      } else if (item.type === 'dir') {
+      } else if (item.type === 'dir' && item.path !== 'musicas') {
         try {
           const response = await octokit.request('GET /repos/{owner}/{repo}/contents/{path}', {
             owner: 'isp-igreja',
@@ -95,7 +96,18 @@ function App() {
   };
 
   useEffect(() => {
-    fetchContents('musicas/');
+    const loadInitialContent = async () => {
+      const urlParams = new URLSearchParams(window.location.search);
+      const songPath = urlParams.get('song');
+
+      if (songPath) {
+        await fetchContents(songPath);
+      } else {
+        await fetchContents('');
+      }
+    };
+
+    loadInitialContent();
   }, []);
 
   const handleItemClick = async (item: GitHubContent) => {
@@ -107,7 +119,9 @@ function App() {
         await fetchContents(item.path);
       } else {
         await fetchContents(item.path);
-        setCurrentUrl(window.location.href.split('?')[0] + '?song=' + encodeURIComponent(item.path));
+        const shareUrl = window.location.href.split('?')[0] + '?song=' + encodeURIComponent(item.path);
+        setCurrentUrl(shareUrl);
+        window.history.pushState({}, '', shareUrl);
       }
       setSearchTerm('');
     } catch (error) {
@@ -129,7 +143,7 @@ function App() {
     setLyrics('');
     setCurrentSong('');
     setSearchTerm('');
-    await fetchContents();
+    await fetchContents('');
   };
 
   const filteredContents = searchTerm
